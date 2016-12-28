@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+    <head>
+        <meta charset="utf-8">
+        <title>JSON FORMAT</title>
+        <style type="text/css">
+            label {
+                width : 200px;
+            }
+        </style>
+        <link rel="stylesheet" type="text/css" href="css/common.css" media="all">
+        <script>
+            var $id = function(id) { return document.getElementById(id); }
+            var $class = function(c, n) { n=n||0; return document.getElementsByClassName(c)[n]; }
+            var $classes = function(c)  { return document.getElementsByClassName(c); }
+            
+            window.onload = function()
+            {
+                // ファイル読み込みボタンクリック
+                $id("read-button").addEventListener("change", onChangeFile, false);
+                // 保存ボタンクリック
+                $id("save").addEventListener("click", onSaveFile, false);
+                // ドロップイベント
+                $id("txt").addEventListener("dragover", onCancel, false);
+                $id("txt").addEventListener("dragenter", onCancel, false);
+                $id("txt").addEventListener("drop", onDropFile, false);
+            };
+            
+            var onChangeFile = function(e)
+            {
+                var file = e.target.files[0];
+                readFile(file);
+            };
+            
+            var onDropFile = function(e)
+            {
+                e.preventDefault();
+                var file = e.dataTransfer.files[0];
+                $id("read-button").value = "";
+                readFile(file);
+            };
+            
+            var onCancel = function(e)
+            {
+                if(e.preventDefault) { e.preventDefault(); }
+                return false;
+            };
+            
+            var readFile = function(file)
+            {
+                var encode_type = $id("encode-type").value;
+                
+                if (encode_type=="default") encode_type = undefined;
+                 
+                var reader = new FileReader();
+
+                reader.onload = function(e) {
+                	if (isJSON(e.target.result)) {
+                		// JSON 整形
+						var jsonBefore = JSON.parse(e.target.result);
+						var json = JSON.stringify(jsonBefore, null, "    ");
+						$id("txt").value = json;
+					} else {
+                    	$id("txt").value = e.target.result;
+                    	alert ("json形式ではない、もしくは形式に誤りがあります。");
+					}
+                };
+                
+                reader["readAsText"](file, encode_type);
+            };
+
+            var isJSON = function(arg) {
+    			arg = (typeof arg === "function") ? arg() : arg;
+    			if (typeof arg  !== "string") {
+        			return false;
+    			}
+    			try {
+    				arg = (!JSON) ? eval("(" + arg + ")") : JSON.parse(arg);
+        			return true;
+    			} catch (e) {
+        			return false;
+    			}
+			};
+            
+			var onSaveFile = function(e){
+				if ($id("txt").value == "") {
+					alert("保存するテキストがありません。");
+					return false;
+				}
+				
+				var ext, name, pos, len, lenExt, lenFile;
+
+				fileName = $id("read-button").value;
+				if (fileName == "")
+				{
+					fileName = "jsondata.json";
+				} else {
+					len = fileName.length;
+
+					// 拡張子
+					pos = fileName.lastIndexOf(".");
+                    lenExt = len - pos;
+					ext = fileName.substr(pos, lenExt);
+
+                    // ファイル名
+                    pos = fileName.lastIndexOf("\\");
+                    lenFile = len - pos - lenExt - 1;
+                    name = fileName.substr(pos + 1, lenFile);
+
+                    fileName = name + "_json" + ext;
+				} 
+
+				var blob = new Blob([$id("txt").value], {type: "text/plain"});
+
+				if(window.navigator.msSaveBlob)
+				{
+					// IE
+					window.navigator.msSaveBlob(blob, fileName);
+				} else {
+					// IE以外
+					var a = document.createElement("a");
+					a.href = URL.createObjectURL(blob);
+					a.download = fileName;
+					a.click();
+				}
+			};
+
+        </script>
+    </head>
+    <body>
+        <h1>JSON FORMAT</h1>
+        <textarea id="txt" cols=100 rows=50></textarea>
+        </p>
+        <label>
+            Encode Type : 
+            <select id="encode-type">
+                <option value="default">default</option>
+                <option value="utf-8">utf-8</option>
+                <option value="shift-jis">shift-jis</option>
+            </select>
+        </label>
+        <br /><br />
+        <div><input id="read-button" type="file" /></div><br />
+
+        <a href="#" id="save">
+        	<button type="button"><div>保存</div></button>
+        </a>
+    </body>
+</html>
